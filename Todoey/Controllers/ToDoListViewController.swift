@@ -13,19 +13,18 @@ class ToDoListViewController: UITableViewController{
     var itemArray = [Item]()
     // to get persistent data storage use userdefaults to add key value pairs
     let defaults = UserDefaults()
+    //create a constant i.e data file path which is a path to the new plist file we want to make to hold data
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         // how to acces the stored data
-        if let items = defaults.array(forKey: "ToDoListArray") as? [Item]{
-            itemArray = items
-        }
-        let newItem = Item()
-        newItem.title = "Buy Groceries"
-        itemArray.append(newItem)
-        
-        
+//        if let items = defaults.array(forKey: "ToDoListArray") as? [Item]{
+//            itemArray = items
+//        }
+        loadData()
+
     }
     
     
@@ -55,7 +54,7 @@ class ToDoListViewController: UITableViewController{
         
         //print(itemArray[indexPath.row])
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
-        tableView.reloadData()
+        saveItems()
         
         //to remove the persistent colour change for selection add the following call
         tableView.deselectRow(at: indexPath, animated: true)
@@ -74,9 +73,8 @@ class ToDoListViewController: UITableViewController{
                 newItem.title = textField.text!
                 self.itemArray.append(newItem)// change the data input to item from string
                 //add data to the userdefaults
-                self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-                // really important! have to reload the view to have datasource re-rendered
-                self.tableView.reloadData()
+//                self.defaults.set(self.itemArray, forKey: "ToDoListArray")
+                self.saveItems()
             }
         }
         // add textfield to the alert
@@ -93,6 +91,33 @@ class ToDoListViewController: UITableViewController{
     }
     
     
+    //MARK - Model Manipulation Methods
+    //Refactoring to create a method for encoding and saving data
+    func saveItems (){
+        //use an encoder to encode data to a custom plist file
+        let encoder = PropertyListEncoder()
+        do{
+            let data = try encoder.encode(itemArray) // encoding data
+            try data.write(to: dataFilePath!)// writing data to the file path
+        }catch{
+            print("Data encoding error!\(error)")
+        }
+        
+        // really important! have to reload the view to have datasource re-rendered
+       tableView.reloadData()
+    }
     
+    //decoding data from custom plist file to use in the app
+    func loadData(){
+        let data = try? Data(contentsOf: dataFilePath!)
+        let decoder = PropertyListDecoder()
+        do{
+            itemArray = try decoder.decode([Item].self, from: data!)
+        }catch{
+            print("Error decoding data. \(error)")
+            
+        }
+        
+    }
 }
 
