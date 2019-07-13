@@ -43,7 +43,7 @@ class ToDoListViewController: UITableViewController{
             tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
         }
         
-        //to remove the persistent colour change for selection add the following
+        //to remove the persistent colour change for selection add the following call
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
