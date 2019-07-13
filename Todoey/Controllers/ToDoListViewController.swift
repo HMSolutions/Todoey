@@ -10,7 +10,7 @@ import UIKit
 
 class ToDoListViewController: UITableViewController{
     
-    var itemArray = ["Buy eggs","Get an iPad","Comnplete course"]
+    var itemArray = [Item]()
     // to get persistent data storage use userdefaults to add key value pairs
     let defaults = UserDefaults()
 
@@ -18,10 +18,12 @@ class ToDoListViewController: UITableViewController{
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         // how to acces the stored data
-        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
+        if let items = defaults.array(forKey: "ToDoListArray") as? [Item]{
             itemArray = items
         }
-        
+        let newItem = Item()
+        newItem.title = "Buy Groceries"
+        itemArray.append(newItem)
         
         
     }
@@ -36,23 +38,24 @@ class ToDoListViewController: UITableViewController{
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let item = itemArray[indexPath.row]
         
-        
+        //setting the cell's text
+        cell.textLabel?.text = item.title
+        //setting the checkmark on or off based on internal boolean
+        // use ternary operator to reduce code
+        cell.accessoryType = item.done ? .checkmark : .none
+
         return cell
         
     }
     
     //MARK - Table view Delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //print(itemArray[indexPath.row])
         
-        // adding accessorlitem such as a check mark the cell
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark {
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        }else{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
+        //print(itemArray[indexPath.row])
+        itemArray[indexPath.row].done = !itemArray[indexPath.row].done
+        tableView.reloadData()
         
         //to remove the persistent colour change for selection add the following call
         tableView.deselectRow(at: indexPath, animated: true)
@@ -67,7 +70,9 @@ class ToDoListViewController: UITableViewController{
         // create alert action i.e. what is to be done
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             if (textField.text != ""){
-                self.itemArray.append(textField.text!)
+                let newItem = Item()
+                newItem.title = textField.text!
+                self.itemArray.append(newItem)// change the data input to item from string
                 //add data to the userdefaults
                 self.defaults.set(self.itemArray, forKey: "ToDoListArray")
                 // really important! have to reload the view to have datasource re-rendered
