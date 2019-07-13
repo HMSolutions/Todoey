@@ -10,7 +10,7 @@ import UIKit
 
 class ToDoListViewController: UITableViewController{
     
-    let itemArray = ["Buy eggs","Get an iPad","Comnplete course"]
+    var itemArray = ["Buy eggs","Get an iPad","Comnplete course"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,6 +46,35 @@ class ToDoListViewController: UITableViewController{
         //to remove the persistent colour change for selection add the following call
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
+    //MARK - Add new items
+    
+    @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
+        var textField = UITextField()
+        // create an alert controller
+        let alert = UIAlertController(title: "Add Item", message: "Add a new Item", preferredStyle: .alert)
+        // create alert action i.e. what is to be done
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+            if (textField.text != ""){
+            self.itemArray.append(textField.text!)
+            // really important! have to reload the view to have datasource re-rendered
+            self.tableView.reloadData()
+            }
+        }
+        // add textfield to the alert
+        alert.addTextField { (alertTextField) in
+            alertTextField.placeholder = "create new item"
+            textField = alertTextField
+        }
+        
+        // add action as alert's action
+        alert.addAction(action)
+        // choose how to present the whole thing
+        present(alert,animated: true, completion: nil)
+        
+    }
+    
+    
     
 }
 
