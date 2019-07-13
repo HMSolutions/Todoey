@@ -11,11 +11,22 @@ import UIKit
 class ToDoListViewController: UITableViewController{
     
     var itemArray = ["Buy eggs","Get an iPad","Comnplete course"]
+    // to get persistent data storage use userdefaults to add key value pairs
+    let defaults = UserDefaults()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
+        // how to acces the stored data
+        if let items = defaults.array(forKey: "ToDoListArray") as? [String] {
+            itemArray = items
+        }
+        
+        
+        
     }
+    
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
     }
@@ -56,9 +67,11 @@ class ToDoListViewController: UITableViewController{
         // create alert action i.e. what is to be done
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             if (textField.text != ""){
-            self.itemArray.append(textField.text!)
-            // really important! have to reload the view to have datasource re-rendered
-            self.tableView.reloadData()
+                self.itemArray.append(textField.text!)
+                //add data to the userdefaults
+                self.defaults.set(self.itemArray, forKey: "ToDoListArray")
+                // really important! have to reload the view to have datasource re-rendered
+                self.tableView.reloadData()
             }
         }
         // add textfield to the alert
