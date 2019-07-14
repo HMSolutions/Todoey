@@ -22,6 +22,15 @@ class ToDoListViewController: UITableViewController{
     let defaults = UserDefaults()
     //create a constant i.e data file path which is a path to the new plist file we want to make to hold data
 //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
+    
+    /*************************************************************************************/
+    
+    //creating selectedCategory variable to identify which category has been selected
+    var selectedCategory : Category?{
+        didSet{
+            loadData()
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -85,6 +94,7 @@ class ToDoListViewController: UITableViewController{
                 let newItem = Item(context: self.context)
                 newItem.title = textField.text!
                 newItem.done = false
+                newItem.parentCategory = self.selectedCategory
                 self.itemArray.append(newItem)// change the data input to item from string
                 //add data to the userdefaults
 //                self.defaults.set(self.itemArray, forKey: "ToDoListArray")
@@ -120,9 +130,19 @@ class ToDoListViewController: UITableViewController{
     }
     
     //decoding data from custom plist file to use in the app
-    func loadData(with request:NSFetchRequest<Item>  = Item.fetchRequest()){
+    func loadData(with request:NSFetchRequest<Item>  = Item.fetchRequest(), predicate : NSPredicate? = nil){
         //have to explicity mention data type
         //it is same data taype as returned by context.fetch(request) below
+        //create a predicate so that result is filtered by parent category
+        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        
+        //compound predicate
+        if let additionalPredicate = predicate {
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate,additionalPredicate])
+        }else{
+            request.predicate = categoryPredicate
+        }
+        
         do{
            itemArray = try context.fetch(request)
         }catch{
@@ -152,7 +172,7 @@ extension ToDoListViewController : UISearchBarDelegate{
         //add sortdescriptor to the request which accepts an array
         request.sortDescriptors = [sortDescriptor]
         
-        loadData(with: request)
+        loadData(with: request, predicate: predicate)
     }
     
     // to restore the list before search
