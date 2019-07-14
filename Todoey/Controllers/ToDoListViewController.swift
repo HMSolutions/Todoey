@@ -7,14 +7,21 @@
 //
 
 import UIKit
+import CoreData
+
 
 class ToDoListViewController: UITableViewController{
     
+    
+    //use an encoder to encode data to CoreData by getting the superclass object and casting
+    //it explicitly to Appdelegate and accessing its properties and methods
+    // aim is to get the context
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     var itemArray = [Item]()
     // to get persistent data storage use userdefaults to add key value pairs
     let defaults = UserDefaults()
     //create a constant i.e data file path which is a path to the new plist file we want to make to hold data
-    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
+//    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,7 +59,12 @@ class ToDoListViewController: UITableViewController{
     //MARK - Table view Delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        //print(itemArray[indexPath.row])
+        // to delete upon clicking use the following lines commented out
+//        context.delete(itemArray[indexPath.row])
+//        itemArray.remove(at: indexPath.row)
+//        saveItems()
+        
+        //switching boolean value
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         saveItems()
         
@@ -69,8 +81,9 @@ class ToDoListViewController: UITableViewController{
         // create alert action i.e. what is to be done
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             if (textField.text != ""){
-                let newItem = Item()
+                let newItem = Item(context: self.context)
                 newItem.title = textField.text!
+                newItem.done = false
                 self.itemArray.append(newItem)// change the data input to item from string
                 //add data to the userdefaults
 //                self.defaults.set(self.itemArray, forKey: "ToDoListArray")
@@ -94,13 +107,11 @@ class ToDoListViewController: UITableViewController{
     //MARK - Model Manipulation Methods
     //Refactoring to create a method for encoding and saving data
     func saveItems (){
-        //use an encoder to encode data to a custom plist file
-        let encoder = PropertyListEncoder()
+
         do{
-            let data = try encoder.encode(itemArray) // encoding data
-            try data.write(to: dataFilePath!)// writing data to the file path
+            try context.save()
         }catch{
-            print("Data encoding error!\(error)")
+            print("Error saving context! \(error)")
         }
         
         // really important! have to reload the view to have datasource re-rendered
@@ -109,13 +120,12 @@ class ToDoListViewController: UITableViewController{
     
     //decoding data from custom plist file to use in the app
     func loadData(){
-        let data = try? Data(contentsOf: dataFilePath!)
-        let decoder = PropertyListDecoder()
+        let request : NSFetchRequest<Item> = Item.fetchRequest()//have to explicity mention data type
+        //it is same data taype as returned by context.fetch(request) below
         do{
-            itemArray = try decoder.decode([Item].self, from: data!)
+           itemArray = try context.fetch(request)
         }catch{
-            print("Error decoding data. \(error)")
-            
+            print("Error fetching data \(error)")
         }
         
     }
