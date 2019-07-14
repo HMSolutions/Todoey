@@ -30,6 +30,7 @@ class ToDoListViewController: UITableViewController{
 //        if let items = defaults.array(forKey: "ToDoListArray") as? [Item]{
 //            itemArray = items
 //        }
+
         loadData()
 
     }
@@ -40,7 +41,7 @@ class ToDoListViewController: UITableViewController{
     }
 
     
-    //MARK - TableView Datasource methods
+    //MARK: - TableView Datasource methods
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
@@ -56,7 +57,7 @@ class ToDoListViewController: UITableViewController{
         
     }
     
-    //MARK - Table view Delegate methods
+    //MARK: - Table view Delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         // to delete upon clicking use the following lines commented out
@@ -72,7 +73,7 @@ class ToDoListViewController: UITableViewController{
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
-    //MARK - Add new items
+    //MARK: - Add new items
     
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         var textField = UITextField()
@@ -104,7 +105,7 @@ class ToDoListViewController: UITableViewController{
     }
     
     
-    //MARK - Model Manipulation Methods
+    //MARK: - Model Manipulation Methods
     //Refactoring to create a method for encoding and saving data
     func saveItems (){
 
@@ -119,15 +120,51 @@ class ToDoListViewController: UITableViewController{
     }
     
     //decoding data from custom plist file to use in the app
-    func loadData(){
-        let request : NSFetchRequest<Item> = Item.fetchRequest()//have to explicity mention data type
+    func loadData(with request:NSFetchRequest<Item>  = Item.fetchRequest()){
+        //have to explicity mention data type
         //it is same data taype as returned by context.fetch(request) below
         do{
            itemArray = try context.fetch(request)
         }catch{
             print("Error fetching data \(error)")
         }
-        
+        tableView.reloadData()
     }
+    
+
 }
 
+//MARK: - Extensions
+
+extension ToDoListViewController : UISearchBarDelegate{
+    //function related to what happens when search button is clicked
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        // create a request of type NSfetch request type containing an array of Item objects
+        let request : NSFetchRequest<Item> = Item.fetchRequest()
+        //create a predicate which queries the database
+        //format is like columns to be searched and any patterns
+        // argument is what is in the search bar
+        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        //add the query to the request
+        request.predicate = predicate
+        // if you want to sort the search results
+        let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
+        //add sortdescriptor to the request which accepts an array
+        request.sortDescriptors = [sortDescriptor]
+        
+        loadData(with: request)
+    }
+    
+    // to restore the list before search
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if (searchBar.text?.count == 0){
+            loadData()
+            //for changing user interface behaviors always use queue manager and its main thread and then async
+            DispatchQueue.main.async {
+                //dismiss selection/focus from search bar i.e. stop being first responder
+                searchBar.resignFirstResponder()
+            }
+           
+        }
+    }
+}
