@@ -70,6 +70,7 @@ class CategoryViewController: UITableViewController {
     
     func loadCategories(){
         
+        //category array is asked to look into realm and all objects belonging to it  and look for all Category objects
         categoryArray = realm.objects(Category.self)
         tableView.reloadData()
 

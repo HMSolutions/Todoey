@@ -98,6 +98,7 @@ class ToDoListViewController: UITableViewController{
                         try self.realm.write {
                             let newItem = Item()
                             newItem.title = textField.text!
+                            newItem.dateCreated = Date()
                             currentCategory.item.append(newItem)
                         }
                     }catch{
@@ -137,35 +138,24 @@ class ToDoListViewController: UITableViewController{
 
 //MARK: - Extensions
 
-//extension ToDoListViewController : UISearchBarDelegate{
-//    //function related to what happens when search button is clicked
-//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-//        // create a request of type NSfetch request type containing an array of Item objects
-//        let request : NSFetchRequest<Item> = Item.fetchRequest()
-//        //create a predicate which queries the database
-//        //format is like columns to be searched and any patterns
-//        // argument is what is in the search bar
-//        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-//        //add the query to the request
-//        request.predicate = predicate
-//        // if you want to sort the search results
-//        let sortDescriptor = NSSortDescriptor(key: "title", ascending: true)
-//        //add sortdescriptor to the request which accepts an array
-//        request.sortDescriptors = [sortDescriptor]
-//
-//        loadData(with: request, predicate: predicate)
-//    }
-//
-//    // to restore the list before search
-//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-//        if (searchBar.text?.count == 0){
-//            loadData()
-//            //for changing user interface behaviors always use queue manager and its main thread and then async
-//            DispatchQueue.main.async {
-//                //dismiss selection/focus from search bar i.e. stop being first responder
-//                searchBar.resignFirstResponder()
-//            }
-//
-//        }
-//    }
-//}
+extension ToDoListViewController : UISearchBarDelegate{
+    //function related to what happens when search button is clicked
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        // querying using realm. results items to be set to previous value but filetered
+        toDoItems = toDoItems?.filter("title CONTAINS[cd] %@", searchBar.text!).sorted(byKeyPath: "dateCreated", ascending: true)
+        tableView.reloadData()
+    }
+
+    // to restore the list before search
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if (searchBar.text?.count == 0){
+            loadData()
+            //for changing user interface behaviors always use queue manager and its main thread and then async
+            DispatchQueue.main.async {
+                //dismiss selection/focus from search bar i.e. stop being first responder
+                searchBar.resignFirstResponder()
+            }
+
+        }
+    }
+}
