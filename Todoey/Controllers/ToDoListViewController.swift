@@ -8,9 +8,10 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 
-class ToDoListViewController: UITableViewController{
+class ToDoListViewController: SwipeTableViewController{
     
     var realm = try! Realm()
     var toDoItems : Results<Item>?
@@ -19,6 +20,7 @@ class ToDoListViewController: UITableViewController{
     //create a constant i.e data file path which is a path to the new plist file we want to make to hold data
 //    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Item.plist")
     
+    @IBOutlet weak var searchBar: UISearchBar!
     /*************************************************************************************/
     
     //creating selectedCategory variable to identify which category has been selected
@@ -32,14 +34,30 @@ class ToDoListViewController: UITableViewController{
         super.viewDidLoad()
         // Do any additional setup after loading the view.
         // how to acces the stored data
-//        if let items = defaults.array(forKey: "ToDoListArray") as? [Item]{
-//            itemArray = items
-//        }
-
-       loadData()
+        tableView.separatorStyle = .none
+        loadData()
+    }
+    
+    
+    override func viewWillAppear(_ animated: Bool) {
+        guard let colourHex = selectedCategory?.color else{fatalError()}
+            title = selectedCategory!.name
+            navBarColorUpdate(withHexCode: colourHex)
 
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        navBarColorUpdate(withHexCode: "1D9BF6")
+    }
+    
+    func navBarColorUpdate(withHexCode colourHexCode : String){
+        guard let navbar = navigationController?.navigationBar else{fatalError("Navigation bar does not exist")}
+        guard let navbarColor = UIColor(hexString: colourHexCode) else{fatalError()}
+        navbar.barTintColor = navbarColor
+        navbar.tintColor = ContrastColorOf(navbarColor, returnFlat: true)
+        searchBar.barTintColor = navbarColor
+        navbar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : ContrastColorOf(navbarColor, returnFlat: true)]
+    }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return toDoItems?.count ?? 1
@@ -49,10 +67,16 @@ class ToDoListViewController: UITableViewController{
     //MARK: - TableView Datasource methods
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        
         if let item = toDoItems?[indexPath.row] {
             //setting the cell's text
             cell.textLabel?.text = item.title
+            if let colour = UIColor(hexString: selectedCategory!.color)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(toDoItems!.count)){
+                 cell.backgroundColor = colour
+                 cell.textLabel?.textColor = ContrastColorOf(colour, returnFlat: true)
+            }
+            
             //setting the checkmark on or off based on internal boolean
             // use ternary operator to reduce code
             cell.accessoryType = item.done ? .checkmark : .none
@@ -131,6 +155,21 @@ class ToDoListViewController: UITableViewController{
         
         toDoItems = selectedCategory?.item.sorted(byKeyPath: "title", ascending: true)
         tableView.reloadData()
+    }
+    
+    //MARK- Delete method
+    
+    override func updateModel(at IndexPath: IndexPath) {
+        
+        if let itemForDeletion = toDoItems?[IndexPath.row]{
+            do{
+                try self.realm.write {
+                    self.realm.delete(itemForDeletion)
+                }
+            }catch{
+                print("Error saving data \(error)")
+            }
+        }
     }
 
 
